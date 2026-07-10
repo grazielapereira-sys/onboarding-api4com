@@ -1,0 +1,29 @@
+name: Publicar na Vercel
+
+# Publica automaticamente sempre que algo for salvo na branch main.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-producao
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: team_6zfBKy8FPgSgYdjFEEHGPizl
+      VERCEL_PROJECT_ID: prj_NpAsaD6ecr71aITrynHpEB2vbvkx
+    steps:
+      - name: Baixar os arquivos do repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar a ferramenta da Vercel
+        run: npm install -g vercel@latest
+
+      - name: Publicar em producao
+        run: vercel deploy --prod --yes --token="$VERCEL_TOKEN"
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
