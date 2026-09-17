@@ -597,6 +597,17 @@ body::before{
   body::before,.node-pos,.node-float,#track path.flow,.cover-card,.cover-badge,.btn-primary::after{animation:none!important}
   .node-pos{opacity:1}
 }
+
+/* ---------- Fase 1: progresso na planilha ---------- */
+.prog{margin-top:10px;max-width:440px}
+.prog[hidden]{display:none}
+.prog-bar{height:8px;border-radius:999px;background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--line);overflow:hidden}
+.prog-bar span{display:block;height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,var(--c1),var(--c2));transition:width .4s ease}
+.prog-lbl{margin-top:6px;font-size:var(--t-xs);color:var(--ink-2);font-weight:650;letter-spacing:.02em}
+.syncdot{width:9px;height:9px;border-radius:50%;background:var(--c2);flex:none;align-self:center;transition:background .2s}
+.syncdot.enviando{background:var(--c3)}
+.syncdot.pendente{background:#e0483b}
+.cover-aviso{font-size:var(--t-sm);color:var(--ink-2);background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r);padding:var(--s4);margin-bottom:var(--s4);text-align:left}
 </style>
 </head>
 <body>
@@ -606,14 +617,15 @@ body::before{
   <div class="cover-card">
     <span class="cover-badge">API4COM · ONBOARDING</span>
     <img class="cover-logo" id="coverLogo" alt="API4COM">
-    <h1>Que bom ter você aqui!</h1>
-    <p class="lead">Estas são as suas boas-vindas à API4COM. Você percorre no seu ritmo, um bloquinho de cada vez.</p>
-    <div class="field">
+    <h1 id="coverTitle">Que bom ter você aqui!</h1>
+    <p class="lead" id="coverLead">Estas são as suas boas-vindas à API4COM. Você percorre no seu ritmo, um bloquinho de cada vez.</p>
+    <div id="coverAviso"></div>
+    <div class="field" id="coverField">
       <label for="nameInput">Qual é o seu nome?</label>
       <input id="nameInput" type="text" placeholder="Digite seu primeiro nome" autocomplete="given-name" enterkeyhint="go">
     </div>
     <button class="btn btn-primary btn-lg" id="startBtn" style="width:100%">Começar a trilha</button>
-    <p class="cover-foot">Seus dados ficam salvos só neste dispositivo.</p>
+    <p class="cover-foot" id="coverFoot">Seus dados ficam salvos só neste dispositivo.</p>
   </div>
 </section>
 
@@ -624,8 +636,13 @@ body::before{
       <div class="hi" id="greetHi">Olá</div>
       <div class="h1">Que bom ter você aqui!</div>
       <div class="greet-sub" id="greetSub"></div>
+      <div class="prog" id="prog" hidden>
+        <div class="prog-bar"><span id="progFill"></span></div>
+        <div class="prog-lbl" id="progLbl"></div>
+      </div>
     </div>
     <div class="tools">
+      <span class="syncdot" id="syncDot" title="Progresso salvo com o RH"></span>
       <img class="brand-logo" alt="API4COM">
       <button class="iconbtn" id="notesBtn" title="Minhas anotações"></button>
       <button class="iconbtn" id="editBtn" title="Modo edição (RH)"></button>
@@ -937,7 +954,101 @@ function merge(base, over){
   if(base && typeof base==="object"){ const out=Object.assign({},base); for(const k in over){ if(k in base) out[k]=merge(base[k],over[k]); } return out; }
   return over;
 }
-const CKEY="api4com_content", SKEY="api4com_v1";
+/* ============================================================
+   PROGRESSO NA PLANILHA  (Fase 1)
+   ------------------------------------------------------------
+   Cada pessoa recebe um link com ?c=<token>. Tudo que ela marca
+   sobe pra planilha do RH. Sem token, a página só explica isso.
+   ============================================================ */
+const API_URL = "https://script.google.com/macros/s/AKfycbyrW6QQIiLt7mXOEjcqdAEqImC7YRjCzuBtJKPUBafSnhJDsXF22-4eGZW0tyTiqwMU6A/exec";
+
+const PARAMS = new URLSearchParams(location.search);
+const TOKEN  = (PARAMS.get("c")  || "").trim();
+const DEMO   = PARAMS.has("demo");
+
+let colaborador = null;
+let RESUMO = { feitos:0, total:0, pct:0 };
+
+/* de qual item da planilha cada parte da tela fala */
+const CHAVE_BLOCO = { n1:"bloco-quem-somos", n2:"bloco-cultura", nfunc:"bloco-como-funcionamos",
+                      n3:"bloco-beneficios", n4:"bloco-configuracao" };
+const BLOCO_CHAVE = Object.keys(CHAVE_BLOCO).reduce((o,k)=>{ o[CHAVE_BLOCO[k]]=k; return o; },{});
+const chaveTarefa = i => "config-"+(i+1);
+
+function temApi(){ return !!TOKEN && API_URL.indexOf("COLE_AQUI") < 0; }
+
+function api(acao, dados, tentativa){
+  tentativa = tentativa || 1;
+  /* text/plain de propósito: evita o "preflight" de CORS, que o Apps Script não responde */
+  return fetch(API_URL, {
+    method:"POST",
+    headers:{"Content-Type":"text/plain;charset=utf-8"},
+    body: JSON.stringify(Object.assign({ acao:acao, token:TOKEN }, dados||{}))
+  })
+  .then(r=>r.text())
+  .then(t=>{
+    try{ return JSON.parse(t); }
+    catch(e){ throw new Error("resposta-nao-json"); }
+  })
+  .catch(err=>{
+    /* De vez em quando o Google devolve uma página em vez do JSON. Tentar de novo
+       resolve, e repetir é seguro: o script nunca duplica uma linha de progresso. */
+    if(tentativa < 3){
+      return new Promise(ok=>setTimeout(ok, 800*tentativa)).then(()=>api(acao, dados, tentativa+1));
+    }
+    throw err;
+  });
+}
+
+/* Fila: o que não conseguiu subir fica guardado e tenta de novo sozinho. */
+const FKEY = "api4com_fila_" + (TOKEN||"demo");
+function fila(){ try{ return JSON.parse(localStorage.getItem(FKEY)||"[]"); }catch(e){ return []; } }
+function salvarFila(f){ try{ localStorage.setItem(FKEY, JSON.stringify(f)); }catch(e){} }
+let enviando=false;
+function escoarFila(){
+  if(enviando || !temApi()) return Promise.resolve();
+  const f=fila();
+  if(!f.length){ sinal("ok"); return Promise.resolve(); }
+  enviando=true; sinal("enviando");
+  const item=f[0];
+  return api(item.marcar ? "marcar" : "desmarcar", { chave:item.chave, detalhe:item.detalhe })
+    .then(r=>{
+      if(!r || !r.ok) throw new Error((r && r.erro) || "falhou");
+      if(r.resumo){ RESUMO=r.resumo; atualizarProgresso(); }
+      salvarFila(fila().filter(x=>x.chave!==item.chave));
+      enviando=false;
+      return escoarFila();
+    })
+    .catch(()=>{ enviando=false; sinal("pendente"); setTimeout(escoarFila, 8000); });
+}
+function registrar(chave, marcar, detalhe){
+  if(!temApi() || !chave) return;
+  const f=fila().filter(x=>x.chave!==chave);
+  f.push({ chave:chave, marcar:!!marcar, detalhe:detalhe||null, quando:new Date().toISOString() });
+  salvarFila(f);
+  RESUMO.feitos = Math.max(0, Math.min(RESUMO.total||0, (RESUMO.feitos||0) + (marcar?1:-1)));
+  atualizarProgresso();
+  escoarFila();
+}
+function sinal(estado){
+  const el=document.getElementById("syncDot"); if(!el) return;
+  el.className="syncdot "+estado;
+  el.title = estado==="enviando" ? "Salvando…"
+           : estado==="pendente" ? "Sem conexão agora — salvo assim que a internet voltar"
+           : "Progresso salvo com o RH";
+}
+function atualizarProgresso(){
+  const p=document.getElementById("prog"); if(!p) return;
+  if(!temApi()){ p.hidden=true; return; }
+  const t=RESUMO.total||0, f=Math.min(RESUMO.feitos||0, t), pct=t?Math.round(f/t*100):0;
+  p.hidden=false;
+  document.getElementById("progFill").style.width = pct+"%";
+  document.getElementById("progLbl").textContent = f+" de "+t+" itens concluídos · "+pct+"%";
+}
+addEventListener("online", escoarFila);
+
+const CKEY="api4com_content";
+const SKEY="api4com_v1_"+(TOKEN||"demo");
 /* garante ao menos 2 espaços de link em cada atividade (abrem fora da página) */
 DEFAULT_CONTENT.n4.forEach(a=>{ a.links=a.links||[]; while(a.links.length<2) a.links.push({label:"",url:""}); });
 let CONTENT = clone(DEFAULT_CONTENT);
@@ -989,6 +1100,7 @@ function show(id){ document.querySelectorAll(".screen").forEach(s=>s.classList.r
 $("#startBtn").addEventListener("click", start);
 $("#nameInput").addEventListener("keydown", e=>{ if(e.key==="Enter") start(); });
 function start(){
+  if(TOKEN){ enterTrail(); return; }          /* o nome já veio da planilha */
   const v=$("#nameInput").value.trim();
   if(!v){ $("#nameInput").focus(); $("#nameInput").style.borderColor="#e0483b"; return; }
   state.name=v; saveState(); enterTrail();
@@ -996,7 +1108,7 @@ function start(){
 function enterTrail(){
   $("#greetHi").textContent = "Olá, "+firstName();
   $("#greetSub").textContent = CONTENT.n1.intro || "";
-  show("trail"); buildTrail();
+  show("trail"); buildTrail(); atualizarProgresso();
   requestAnimationFrame(()=>requestAnimationFrame(layout));
 }
 
@@ -1112,7 +1224,11 @@ function openNode(n){
   $(".sheet-body").scrollTop=0;
 }
 function reopen(){ if(activeNode){ const s=$(".sheet-body").scrollTop; openNode(activeNode); $(".sheet-body").scrollTop=s; } }
-function closeOverlay(){ overlay.classList.remove("open"); document.body.style.overflow=""; activeNode=null; }
+function closeOverlay(){
+  /* sem isto o iframe do YouTube continua tocando por trás — era o bug do "só resolve com refresh" */
+  sheetBody.querySelectorAll("iframe").forEach(f=>f.remove());
+  overlay.classList.remove("open"); document.body.style.overflow=""; activeNode=null;
+}
 $("#closeBtn").addEventListener("click", closeOverlay);
 $("#backdrop").addEventListener("click", closeOverlay);
 document.addEventListener("keydown", e=>{ if(e.key==="Escape"){ if($("#celebrate").classList.contains("on")) $("#celebrate").classList.remove("on"); else if(overlay.classList.contains("open")) closeOverlay(); } });
@@ -1571,6 +1687,7 @@ function playVideo(el){
 function toggleTask(n, el){
   const key=el.dataset.key, now=!state.checks[key];
   state.checks[key]=now; saveState();
+  registrar(chaveTarefa(Number(String(key).split("-")[1])), now);
   el.classList.toggle("on", now);
   const tg=el.querySelector(".task-toggle"); if(tg) tg.setAttribute("aria-pressed", now?"true":"false");
   const total=CONTENT.n4.length, done=CONTENT.n4.filter((_,i)=>state.checks["n4-"+i]).length;
@@ -1590,6 +1707,7 @@ function toggleTask(n, el){
 function completeNode(n){
   const already=!!state.done[n.id];
   state.done[n.id]=true; saveState();
+  if(!already) registrar(CHAVE_BLOCO[n.id], true);
   refreshTrail(); closeOverlay();
   if(already) return;
   const all=NODES.every(x=>state.done[x.id]);
@@ -1626,6 +1744,8 @@ document.addEventListener("keydown", e=>{ if(e.key==="Escape" && ndDrawer.classL
    MODO EDIÇÃO + FINALIZAR
    ============================================================ */
 $("#editBtn").innerHTML=icon("edit");
+/* o lápis só aparece pra quem abrir com ?edit=api4com — o colaborador não vê */
+if(PARAMS.get("edit")!=="api4com") $("#editBtn").style.display="none";
 function setEdit(on){
   editMode=on; document.body.classList.toggle("edit", on);
   $("#editBtn").classList.toggle("on", on);
@@ -1716,10 +1836,107 @@ function toast(msg){ const t=$("#toast"); t.innerHTML=icon("check")+"<span>"+esc
 /* ============================================================
    BOOT
    ============================================================ */
+function capa(opts){
+  $("#coverTitle").textContent = opts.titulo;
+  $("#coverLead").textContent  = opts.lead;
+  $("#coverAviso").innerHTML   = opts.aviso ? '<div class="cover-aviso">'+opts.aviso+'</div>' : "";
+  $("#coverField").style.display = opts.pedeNome ? "" : "none";
+  $("#startBtn").style.display   = opts.botao ? "" : "none";
+  if(opts.botao) $("#startBtn").textContent = opts.botao;
+  $("#coverFoot").textContent = opts.rodape || "";
+  show("cover");
+}
+
+/* marca na tela o que a planilha diz que a pessoa já fez */
+function aplicarFeitos(chaves){
+  state.done={}; state.checks={};
+  (chaves||[]).forEach(ch=>{
+    if(BLOCO_CHAVE[ch]) state.done[BLOCO_CHAVE[ch]]=true;
+    const m=/^config-(\d+)$/.exec(ch);
+    if(m) state.checks["n4-"+(Number(m[1])-1)]=true;
+  });
+  saveState();
+}
+
 (function init(){
   $("#coverLogo").src=CONTENT.logo;
   document.querySelectorAll(".brand-logo").forEach(i=>i.src=CONTENT.logo);
-  if(state.name){ $("#nameInput").value=state.name; enterTrail(); }
-  else { show("cover"); setTimeout(()=>$("#nameInput").focus(),160); }
+  if(TOKEN) $("#resetBtn").style.display="none";   /* quem reinicia agora é o RH */
+
+  /* --- sem link individual: explica e para por aqui --- */
+  if(!TOKEN && !DEMO){
+    capa({
+      titulo:"Este onboarding é individual",
+      lead:"Cada pessoa recebe um link só dela, que guarda o progresso.",
+      aviso:"Peça o seu link ao RH (Grazi) pelo Google Chat ou pelo e-mail de boas-vindas.",
+      pedeNome:false, botao:null,
+      rodape:"API4COM · Onboarding"
+    });
+    return;
+  }
+
+  /* --- modo demonstração: como era antes, só neste dispositivo --- */
+  if(!TOKEN && DEMO){
+    capa({
+      titulo:"Que bom ter você aqui!",
+      lead:"Estas são as suas boas-vindas à API4COM. Você percorre no seu ritmo, um bloquinho de cada vez.",
+      aviso:"Modo demonstração: nada é enviado pro RH, o progresso fica só neste navegador.",
+      pedeNome:true, botao:"Começar a trilha",
+      rodape:"Seus dados ficam salvos só neste dispositivo."
+    });
+    if(state.name){ $("#nameInput").value=state.name; enterTrail(); }
+    else setTimeout(()=>$("#nameInput").focus(),160);
+    return;
+  }
+
+  /* --- com link individual: busca o progresso na planilha --- */
+  capa({ titulo:"Um instante…", lead:"Buscando o seu progresso.", pedeNome:false, botao:null, rodape:"" });
+
+  if(!temApi()){
+    capa({
+      titulo:"Quase lá",
+      lead:"O onboarding ainda não está ligado na planilha do RH.",
+      aviso:"Se você é do RH: falta colar a URL do app da planilha na linha API_URL do arquivo.",
+      pedeNome:false, botao:null, rodape:"API4COM · Onboarding"
+    });
+    return;
+  }
+
+  api("carregar", {}).then(r=>{
+    if(!r || !r.ok){
+      capa({
+        titulo:"Link não encontrado",
+        lead:"Este link não corresponde a nenhum cadastro.",
+        aviso:"Confira se copiou o endereço inteiro, ou peça um link novo ao RH (Grazi).",
+        pedeNome:false, botao:null, rodape:"API4COM · Onboarding"
+      });
+      return;
+    }
+    colaborador = r.colaborador || {};
+    RESUMO = r.resumo || RESUMO;
+    if(colaborador.nome){ state.name = colaborador.nome; }
+    aplicarFeitos(r.feitos);
+    const comecou = (RESUMO.feitos||0) > 0;
+    capa({
+      titulo: "Que bom ter você aqui, "+firstName()+"!",
+      lead: comecou
+        ? "Você já concluiu "+RESUMO.feitos+" de "+RESUMO.total+" itens. Vamos de onde parou."
+        : "Estas são as suas boas-vindas à API4COM. Você percorre no seu ritmo, um bloquinho de cada vez.",
+      pedeNome:false,
+      botao: comecou ? "Continuar a trilha" : "Começar a trilha",
+      rodape:"Seu progresso fica salvo automaticamente."
+    });
+    escoarFila();
+  }).catch(()=>{
+    /* sem internet: se já houver progresso guardado aqui, deixa seguir mesmo assim */
+    capa({
+      titulo:"Sem conexão agora",
+      lead:"Não consegui falar com a planilha do RH.",
+      aviso:"Confira a internet e recarregue a página. O que você marcar offline é enviado quando a conexão voltar.",
+      pedeNome:false,
+      botao: state.name ? "Continuar mesmo assim" : null,
+      rodape:"API4COM · Onboarding"
+    });
+  });
 })();
 </script></body></html>
