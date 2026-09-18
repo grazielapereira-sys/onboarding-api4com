@@ -607,6 +607,10 @@ body::before{
 .syncdot{width:9px;height:9px;border-radius:50%;background:var(--c2);flex:none;align-self:center;transition:background .2s}
 .syncdot.enviando{background:var(--c3)}
 .syncdot.pendente{background:#e0483b}
+.carregando{height:4px;max-width:220px;margin:0 auto var(--s6);border-radius:999px;background:var(--surface-2);overflow:hidden}
+.carregando span{display:block;height:100%;width:40%;border-radius:999px;background:linear-gradient(90deg,var(--c1),var(--c2));animation:carrega 1.2s ease-in-out infinite}
+@keyframes carrega{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+@media (prefers-reduced-motion: reduce){ .carregando span{animation:none;width:100%;opacity:.5} }
 .cover-aviso{font-size:var(--t-sm);color:var(--ink-2);background:var(--bg-2);border:1px solid var(--line);border-radius:var(--r);padding:var(--s4);margin-bottom:var(--s4);text-align:left}
 </style>
 </head>
@@ -1839,7 +1843,8 @@ function toast(msg){ const t=$("#toast"); t.innerHTML=icon("check")+"<span>"+esc
 function capa(opts){
   $("#coverTitle").textContent = opts.titulo;
   $("#coverLead").textContent  = opts.lead;
-  $("#coverAviso").innerHTML   = opts.aviso ? '<div class="cover-aviso">'+opts.aviso+'</div>' : "";
+  $("#coverAviso").innerHTML   = opts.carregando ? '<div class="carregando" aria-hidden="true"><span></span></div>'
+                               : opts.aviso ? '<div class="cover-aviso">'+opts.aviso+'</div>' : "";
   $("#coverField").style.display = opts.pedeNome ? "" : "none";
   $("#startBtn").style.display   = opts.botao ? "" : "none";
   if(opts.botao) $("#startBtn").textContent = opts.botao;
@@ -1890,7 +1895,7 @@ function aplicarFeitos(chaves){
   }
 
   /* --- com link individual: busca o progresso na planilha --- */
-  capa({ titulo:"Um instante…", lead:"Buscando o seu progresso.", pedeNome:false, botao:null, rodape:"" });
+  capa({ titulo:"Um instante…", lead:"Buscando o seu progresso.", carregando:true, pedeNome:false, botao:null, rodape:"" });
 
   if(!temApi()){
     capa({
@@ -1902,7 +1907,12 @@ function aplicarFeitos(chaves){
     return;
   }
 
+  const espera1 = setTimeout(()=>{ $("#coverLead").textContent = "Ainda buscando… o primeiro acesso do dia costuma levar alguns segundos."; }, 4000);
+  const espera2 = setTimeout(()=>{ $("#coverLead").textContent = "Está demorando mais que o normal. Se continuar assim, recarregue a página."; }, 15000);
+  const pararEspera = ()=>{ clearTimeout(espera1); clearTimeout(espera2); };
+
   api("carregar", {}).then(r=>{
+    pararEspera();
     if(!r || !r.ok){
       capa({
         titulo:"Link não encontrado",
@@ -1928,6 +1938,7 @@ function aplicarFeitos(chaves){
     });
     escoarFila();
   }).catch(()=>{
+    pararEspera();
     /* sem internet: se já houver progresso guardado aqui, deixa seguir mesmo assim */
     capa({
       titulo:"Sem conexão agora",
