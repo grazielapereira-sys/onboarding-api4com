@@ -607,6 +607,12 @@ body::before{
 .syncdot{width:9px;height:9px;border-radius:50%;background:var(--c2);flex:none;align-self:center;transition:background .2s}
 .syncdot.enviando{background:var(--c3)}
 .syncdot.pendente{background:#e0483b}
+.task-detail{margin-top:6px;font-size:var(--t-sm);color:var(--ink-2);max-width:62ch}
+.task-na{margin-top:10px;font-size:var(--t-xs);color:var(--ink-3);text-decoration:underline;background:none;padding:0}
+.task-na:hover{color:var(--ink-2)}
+.task.na{opacity:.7}
+.task.na .task-toggle{background:var(--surface-2);color:var(--ink-3);box-shadow:inset 0 0 0 1px var(--line)}
+.cfg-aviso{font-size:var(--t-sm);color:var(--ink-2);background:rgba(76,130,255,.08);border:1px solid rgba(76,130,255,.25);border-radius:var(--r);padding:var(--s3) var(--s4);margin-bottom:var(--s4)}
 .carregando{height:4px;max-width:220px;margin:0 auto var(--s6);border-radius:999px;background:var(--surface-2);overflow:hidden}
 .carregando span{display:block;height:100%;width:40%;border-radius:999px;background:linear-gradient(90deg,var(--c1),var(--c2));animation:carrega 1.2s ease-in-out infinite}
 @keyframes carrega{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
@@ -928,15 +934,83 @@ const DEFAULT_CONTENT = {
       { label:"Playbook do comercial", url:"https://playbookvendas.lovable.app/" },
     ],
   },
-  n4: [
-    { texto:"Passar o tamanho da sua camiseta", resp:"RH", grupo:"acessos", links:[{label:"Chat do RH", url:""}] },
-    { texto:"Confirmar o recebimento do cartão Caju e o saldo no app", resp:"RH", grupo:"acessos", links:[] },
-    { texto:"Criar conta no Itaú pra o salário e avisar o RH", resp:"Você", grupo:"acessos", links:[{label:"Abrir Itaú", url:""}] },
-    { texto:"Conhecer o organograma", resp:"Você", grupo:"ferramentas", links:[{label:"Organograma", url:""}] },
-    { texto:"Aprender a usar a agenda do Google", resp:"Você", grupo:"ferramentas", links:[{label:"Ver como", url:""}] },
-    { texto:"Incluir a assinatura no e-mail", resp:"Você", grupo:"ferramentas", links:[{label:"Orientações", url:""}] },
-    { texto:"Atualizar o LinkedIn", resp:"Você", grupo:"ferramentas", links:[{label:"Abrir", url:""}] },
-  ],
+  /* Bloco "Configurando tudo". A chave de cada tarefa é a mesma da aba "itens"
+     da planilha: lá se decide o que conta e pra quem; aqui ficam os textos e os
+     links, que o RH edita. Pra incluir uma tarefa nova, crie a linha na planilha
+     e depois escreva o texto dela aqui. */
+  tarefas: {
+    "cfg-email-pedir": { grupo:"primeiro-dia", resp:"Você",
+      texto:"Peça o seu e-mail corporativo ao André Dias",
+      detalhe:"Faça isso assim que começar: é o e-mail que destrava todo o resto — agenda, reuniões e as outras ferramentas. Mande uma mensagem pra ele no Google Chat pedindo o seu @api4com.com.",
+      links:[] },
+    "cfg-email-ok": { grupo:"primeiro-dia", resp:"Você",
+      texto:"Confirme que consegue acessar o seu e-mail",
+      detalhe:"Entre com o seu endereço @api4com.com e veja se está tudo certo. Se não conseguir, fale de novo com o André Dias — não fique esperando.",
+      links:[{label:"Abrir o Gmail", url:"https://mail.google.com"}] },
+    "cfg-rh-agenda": { grupo:"primeiro-dia", resp:"Você",
+      texto:"Marque você mesma a sua primeira conversa com o RH",
+      detalhe:"Aqui ninguém espera ser chamado. Abra o Google Agenda, clique em Criar, escolha um horário livre e convide a Grazi. Esse é o jeito de chamar qualquer pessoa da empresa pra conversar.",
+      links:[{label:"Abrir o Google Agenda", url:"https://calendar.google.com"}] },
+    "cfg-rh-reuniao": { grupo:"primeiro-dia", resp:"Você",
+      texto:"Tive a minha primeira conversa com o RH",
+      detalhe:"Marque aqui depois que a conversa acontecer.",
+      links:[] },
+
+    "cfg-ferramentas-conferir": { grupo:"ferramentas", resp:"Você",
+      texto:"Confirme com a sua liderança quais ferramentas você vai usar",
+      detalhe:"Ninguém usa todas. Pergunte à sua liderança quais das ferramentas abaixo fazem parte do seu dia a dia — nas outras, marque \"não preciso deste acesso\" e siga em frente.",
+      links:[] },
+    "cfg-paymaster": { grupo:"ferramentas", resp:"Você", podeDispensar:true,
+      texto:"Peça acesso ao Paymaster",
+      detalhe:"Quem libera é o André Dias. Mande uma mensagem pra ele no Google Chat.",
+      links:[] },
+    "cfg-bitwarden": { grupo:"ferramentas", resp:"Você", podeDispensar:true,
+      texto:"Peça acesso ao Bitwarden",
+      detalhe:"É o cofre de senhas da empresa: senha compartilhada mora lá, nunca numa mensagem solta. Quem libera é o André Dias.",
+      links:[] },
+    "cfg-lightdash": { grupo:"ferramentas", resp:"Você", podeDispensar:true,
+      texto:"Peça acesso ao LightDash",
+      detalhe:"É onde ficam os dados e os painéis da empresa. Quem libera é o André Dias.",
+      links:[] },
+    "cfg-feedz": { grupo:"ferramentas", resp:"Você",
+      texto:"Faça o seu login na Feedz",
+      detalhe:"É onde a gente acompanha os OKRs, as pesquisas e o organograma. Você recebe o convite por e-mail.",
+      links:[{label:"Organograma", url:"https://app.feedz.com.br/organograma"}] },
+    "cfg-agenda": { grupo:"ferramentas", resp:"Você",
+      texto:"Aprenda a usar a agenda do Google",
+      detalhe:"Sua agenda é pública pro time: é assim que as pessoas sabem quando você está livre.",
+      links:[{label:"Ver como", url:"https://drive.google.com/file/d/1-VJ782BgZHUa8uRVz_UfXjm9VpkHFpPT/view?usp=drive_link"}] },
+
+    "cfg-caju-email": { grupo:"contrato", resp:"RH",
+      texto:"Confirme o e-mail de boas-vindas do Caju",
+      detalhe:"O Caju é o cartão de benefícios: VR e auxílio home office. Avise o RH quando receber.",
+      links:[] },
+    "cfg-caju-voucher": { grupo:"contrato", resp:"RH",
+      texto:"Confirme o voucher de equipamentos no Caju",
+      detalhe:"É com ele que você monta o seu setup. Confira o saldo no app e avise o RH.",
+      links:[] },
+    "cfg-itau": { grupo:"contrato", resp:"Você",
+      texto:"Abra a conta no Itaú para o salário e avise o RH",
+      detalhe:"O passo a passo está no link abaixo.",
+      links:[{label:"Como abrir", url:"https://api4com-time.atlassian.net/wiki/x/AYAsC"}] },
+    "cfg-contrato-pj": { grupo:"contrato", resp:"RH",
+      texto:"Assine o contrato de prestação de serviços",
+      detalhe:"A Grazi te envia o contrato para assinatura. Dúvida sobre qualquer cláusula, fale com ela antes de assinar.",
+      links:[] },
+    "cfg-nf-cintia": { grupo:"contrato", resp:"Você",
+      texto:"Combine com a Cintia a sua nota fiscal e o pagamento",
+      detalhe:"É a Cintia quem recebe a nota fiscal e faz o pagamento. Procure ela no Google Chat para combinar a data de envio da NF e como funciona o pagamento.",
+      links:[] },
+
+    "cfg-linkedin": { grupo:"conteudos", resp:"Você",
+      texto:"Atualize o seu LinkedIn",
+      detalhe:"Temos um playbook com sugestões de como anunciar que você entrou.",
+      links:[{label:"Playbook do LinkedIn", url:"https://my-web-drop.lovable.app/api/public/s/playbook-linkedin-api4com-ce8mu"}] },
+    "cfg-conteudos-rh": { grupo:"conteudos", resp:"Você",
+      texto:"Conheça os conteúdos do RH para o time",
+      detalhe:"Políticas, benefícios e o que mais você precisa saber no dia a dia.",
+      links:[{label:"Abrir", url:"https://api4com-time.atlassian.net/wiki/x/AYAHEQ"}] },
+  },
   n5: { texto:"" },
   labels: {
     n1_quemsomos:"QUEM SOMOS", n1_numeros:"EM NÚMEROS", n1_cultura:"NOSSA CULTURA",
@@ -946,7 +1020,10 @@ const DEFAULT_CONTENT = {
     n3_beneficios:"SEUS BENEFÍCIOS", n3_beneficios_h:"O que a API4COM oferece pra você",
     n3_equip:"EQUIPAMENTOS", n3_equip_h:"Monte o seu setup", n3_equip_sug:"Equipamentos sugeridos",
     n3_ergo:"ERGONOMIA NO HOME OFFICE",
-    n4_progresso:"Seu progresso", n4_g_acessos:"Acessos & documentos", n4_g_ferramentas:"Ferramentas do dia a dia",
+    n4_progresso:"Seu progresso",
+    cfg_g_primeiro:"Seu primeiro dia", cfg_g_ferramentas:"Ferramentas que você vai usar",
+    cfg_g_contrato:"Contrato e pagamento", cfg_g_conteudos:"Pra conhecer a empresa",
+    n4_g_acessos:"Acessos & documentos", n4_g_ferramentas:"Ferramentas do dia a dia",
   },
 };
 
@@ -977,7 +1054,6 @@ let RESUMO = { feitos:0, total:0, pct:0 };
 const CHAVE_BLOCO = { n1:"bloco-quem-somos", n2:"bloco-cultura", nfunc:"bloco-como-funcionamos",
                       n3:"bloco-beneficios", n4:"bloco-configuracao" };
 const BLOCO_CHAVE = Object.keys(CHAVE_BLOCO).reduce((o,k)=>{ o[CHAVE_BLOCO[k]]=k; return o; },{});
-const chaveTarefa = i => "config-"+(i+1);
 
 function temApi(){ return !!TOKEN && API_URL.indexOf("COLE_AQUI") < 0; }
 
@@ -1054,7 +1130,11 @@ addEventListener("online", escoarFila);
 const CKEY="api4com_content";
 const SKEY="api4com_v1_"+(TOKEN||"demo");
 /* garante ao menos 2 espaços de link em cada atividade (abrem fora da página) */
-DEFAULT_CONTENT.n4.forEach(a=>{ a.links=a.links||[]; while(a.links.length<2) a.links.push({label:"",url:""}); });
+/* garante 2 espacos de link em cada tarefa, pro modo edicao ter onde colar */
+Object.keys(DEFAULT_CONTENT.tarefas).forEach(ch=>{
+  const t=DEFAULT_CONTENT.tarefas[ch]; t.links=t.links||[];
+  while(t.links.length<2) t.links.push({label:"",url:""});
+});
 let CONTENT = clone(DEFAULT_CONTENT);
 try{ const s=JSON.parse((document.getElementById("seed").textContent||"").trim()||"{}"); CONTENT=merge(CONTENT,s); }catch(e){}
 try{ const d=JSON.parse(localStorage.getItem(CKEY)||"null"); if(d) CONTENT=merge(CONTENT,d); }catch(e){}
@@ -1064,18 +1144,24 @@ function setP(o,p,v){ const ks=p.split("."); const last=ks.pop(); let t=o; for(c
 
 /* ---------- estado (progresso) ---------- */
 let state = (()=>{ try{ return JSON.parse(localStorage.getItem(SKEY))||{}; }catch(e){ return {}; } })();
-state.name = state.name||""; state.done = state.done||{}; state.checks = state.checks||{};
+state.name = state.name||""; state.done = state.done||{}; state.checks = state.checks||{}; state.dispensa = state.dispensa||{};
 function saveState(){ localStorage.setItem(SKEY, JSON.stringify(state)); }
 let editMode=false;
 
 /* ---------- nós ---------- */
-const NODES = [
-  { id:"n1", cvar:"--c1", icon:"rh",      title:"Quem somos",        desc:"Conheça a API4COM",         chip:"abre slide", type:"slide" },
-  { id:"n2", cvar:"--c2", icon:"culture", title:"Nossa cultura",     desc:"Fala da Grazi e vídeos",    chip:"abre slide", type:"slide" },
-  { id:"nfunc", cvar:"--c5", icon:"chat", title:"Como funcionamos",  desc:"Comunicação, ritmos e treinamentos", chip:"abre slide", type:"slide" },
-  { id:"n3", cvar:"--c3", icon:"gift",    title:"Nossos benefícios", desc:"Benefícios e equipamentos", chip:"abre slide", type:"slide" },
-  { id:"n4", cvar:"--c4", icon:"config",  title:"Configurando tudo", desc:"Suas atividades",           chip:"atividades", type:"tasks" },
+/* "Configurando tudo" vem primeiro: os acessos demoram e dependem de outras
+   pessoas, entao a pessoa pede tudo no primeiro dia e faz o resto enquanto espera. */
+const NODES_TODOS = [
+  { id:"n4", cvar:"--c4", icon:"config",  title:"Configurando tudo", desc:"Comece por aqui: peça os seus acessos", chip:"atividades", type:"tasks" },
+  { id:"n1", cvar:"--c1", icon:"rh",      title:"Quem somos",        desc:"Conheça a API4COM",          chip:"abre slide", type:"slide" },
+  { id:"n2", cvar:"--c2", icon:"culture", title:"Nossa cultura",     desc:"No que a gente acredita",    chip:"abre slide", type:"slide" },
+  { id:"nfunc", cvar:"--c5", icon:"chat", title:"Como funcionamos",  desc:"Comunicação, rituais e rotina", chip:"abre slide", type:"slide" },
+  { id:"n3", cvar:"--c3", icon:"gift",    title:"Nossos benefícios", desc:"Benefícios e equipamentos",  chip:"abre slide", type:"slide" },
 ];
+/* A trilha de cada pessoa: a planilha diz quais blocos valem pra ela
+   (benefícios, por exemplo, é só de quem é CLT). */
+let NODES = NODES_TODOS.slice();
+let ITENS = [];
 
 /* ---------- util ---------- */
 const $ = s=>document.querySelector(s);
@@ -1458,7 +1544,17 @@ function slideNFunc(){
           <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">${links}</div>
         </div>
       </div>
-    </div>`;
+    </div>
+    <section style="margin-top:var(--s8)">
+      <p class="eyebrow" style="color:var(--c5)">${edLabel('n3_ergo')}</p>
+      <div class="ergo-img-wrap"><img class="ergo-img" src="${ERGO_IMG}" alt="Evite curvar as costas; sente-se ereto, com apoio para os pés e antebraços" /></div>
+      <div class="ergo-tips">
+        <div class="ergo-tip"><b>Postura</b><span>Pés no chão (use apoio se precisar), joelhos e quadris a 90°, costas retas e apoiadas.</span></div>
+        <div class="ergo-tip"><b>Monitor</b><span>Suporte para o notebook, tela a 50–75 cm dos olhos, topo na altura dos olhos.</span></div>
+        <div class="ergo-tip"><b>Ambiente</b><span>Luz sem ofuscamento e local arejado.</span></div>
+        <div class="ergo-tip"><b>Pausas ativas</b><span>Levante e alongue-se ao longo do dia.</span></div>
+      </div>
+    </section>`;
 }
 
 /* ===== nó 3 · benefícios ===== */
@@ -1528,98 +1624,107 @@ function slideN3(){
         ${equip}
       </section>
 
-      <section>
-        <p class="eyebrow" style="color:var(--c3)">${edLabel('n3_ergo')}</p>
-        <div class="ergo-img-wrap"><img class="ergo-img" src="${ERGO_IMG}" alt="Evite curvar as costas; sente-se ereto, com apoio para os pés e antebraços" /></div>
-        <div class="ergo-tips">
-          <div class="ergo-tip"><b>Postura</b><span>Pés no chão (use apoio se precisar), joelhos e quadris a 90°, costas retas e apoiadas.</span></div>
-          <div class="ergo-tip"><b>Monitor</b><span>Suporte para o notebook, tela a 50–75 cm dos olhos, topo na altura dos olhos.</span></div>
-          <div class="ergo-tip"><b>Ambiente</b><span>Luz sem ofuscamento e local arejado.</span></div>
-          <div class="ergo-tip"><b>Pausas ativas</b><span>Levante e alongue-se ao longo do dia.</span></div>
-        </div>
-      </section>
     </div>`;
 }
 
-/* ===== nó 4 · configurar tudo (checklist agrupado) ===== */
-const N4_GROUPS = [
-  { id:"acessos",     titulo:"Acessos & documentos",    icon:"card" },
-  { id:"ferramentas", titulo:"Ferramentas do dia a dia", icon:"config" },
+/* ===== nó · configurando tudo (o primeiro da trilha) ===== */
+const GRUPOS_TAREFA = [
+  { id:"primeiro-dia", label:"cfg_g_primeiro",    icon:"rh" },
+  { id:"ferramentas",  label:"cfg_g_ferramentas", icon:"config" },
+  { id:"contrato",     label:"cfg_g_contrato",    icon:"card" },
+  { id:"conteudos",    label:"cfg_g_conteudos",   icon:"folder" },
 ];
-function taskAdd(){ CONTENT.n4.push({texto:"", resp:"Você", grupo:"acessos", links:[{label:"",url:""},{label:"",url:""}]}); saveContent(); reopen(); }
-function taskRemove(i){ CONTENT.n4.splice(i,1); saveContent(); reopen(); }
+
+/* Quais tarefas valem pra esta pessoa: quem manda é a planilha, que já devolve
+   só o que se aplica ao contrato dela. Sem link individual (demonstração),
+   mostra todas. */
+function tarefasDaPessoa(){
+  const daPlanilha = ITENS.filter(i=> i.bloco==="configuracao" && i.chave.indexOf("bloco-")!==0);
+  if(daPlanilha.length) return daPlanilha.map(i=>({ chave:i.chave, titulo:i.titulo }));
+  return Object.keys(CONTENT.tarefas).map(ch=>({ chave:ch, titulo:"" }));
+}
 function n4Label(done,total){ return done===total ? "Tudo concluído! 🎉" : ((total-done)<=2 ? `${done} de ${total} · quase lá!` : `${done} de ${total} concluídas`); }
-function taskCard(a, i){
-  const key="n4-"+i, on=state.checks[key]?"on":"";
-  const chips = (a.links||[]).map(l=> isLink(l.url)
+
+function taskCard(it){
+  const t = CONTENT.tarefas[it.chave] || {};
+  const feito = !!state.checks[it.chave], dispensado = !!state.dispensa[it.chave];
+  const chips = (t.links||[]).map(l=> isLink(l.url)
     ? `<a class="tlink" href="${at(l.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${icon("link")} ${esc(l.label||"Abrir")}</a>` : "").join("");
-  const linksBox = chips.trim() ? `<div class="task-links">${chips}</div>` : "";
-  const respHint = a.resp==="RH" ? `<span class="task-resp">${icon("users")} O RH cuida — é só confirmar</span>` : "";
-  return `<div class="task ${on}" data-key="${key}">
+  const resp = dispensado ? `<span class="task-resp">${icon("check")} Você marcou que não precisa deste acesso</span>`
+             : t.resp==="RH" ? `<span class="task-resp">${icon("users")} O RH cuida — é só confirmar</span>` : "";
+  return `<div class="task ${dispensado?"na":(feito?"on":"")}" data-key="${at(it.chave)}">
     <div class="task-main">
-      <button class="task-toggle" aria-label="Marcar" aria-pressed="${on?"true":"false"}">${icon("check")}</button>
+      <button class="task-toggle" aria-label="Marcar" aria-pressed="${feito?"true":"false"}">${icon("check")}</button>
       <div class="task-body">
-        <div class="task-text">${esc(a.texto)}</div>
-        ${respHint}
-        ${linksBox}
+        <div class="task-text">${esc(t.texto || it.titulo || it.chave)}</div>
+        ${t.detalhe ? `<p class="task-detail">${esc(t.detalhe)}</p>` : ""}
+        ${resp}
+        ${chips.trim() ? `<div class="task-links">${chips}</div>` : ""}
+        ${(t.podeDispensar && !feito) ? `<button class="task-na" data-na="${at(it.chave)}">Não preciso deste acesso</button>` : ""}
       </div>
     </div>
   </div>`;
 }
+
 function slideN4(){
-  const list=CONTENT.n4, total=list.length;
+  const lista = tarefasDaPessoa();
+
   if(editMode){
-    const cards = list.map((a,i)=>{
-      const links = (a.links||[]).map((l,li)=>`
+    const cards = lista.map(it=>{
+      const t = CONTENT.tarefas[it.chave];
+      if(!t) return `<div class="task-edit"><div class="te-head"><b>${esc(it.titulo||it.chave)}</b></div>
+        <p class="hint">Esta tarefa está na planilha mas ainda não tem texto aqui. Me peça pra criar o texto dela.</p></div>`;
+      const links = (t.links||[]).map((l,li)=>`
         <div class="tlink-edit">
-          <input class="edit-inp" data-bind="n4.${i}.links.${li}.label" value="${at(l.label)}" placeholder="Nome do link (ex: Ver como)" />
-          <input class="edit-inp" data-bind="n4.${i}.links.${li}.url" value="${at(l.url)}" placeholder="https://..." />
+          <input class="edit-inp" data-bind="tarefas.${it.chave}.links.${li}.label" value="${at(l.label)}" placeholder="Nome do link (ex: Ver como)" />
+          <input class="edit-inp" data-bind="tarefas.${it.chave}.links.${li}.url" value="${at(l.url)}" placeholder="https://..." />
         </div>`).join("");
-      const gopts = N4_GROUPS.map(g=>`<option value="${g.id}" ${a.grupo===g.id?"selected":""}>${esc(getP(CONTENT,'labels.n4_g_'+g.id)||g.titulo)}</option>`).join("");
       return `<div class="task-edit">
-        <div class="te-head">
-          <input class="edit-inp" data-bind="n4.${i}.texto" value="${at(a.texto)}" placeholder="Descreva a atividade" />
-          <button class="ee-del" title="Remover atividade" onclick="taskRemove(${i})">${icon("trash")}</button>
-        </div>
-        <div class="ee-row">
-          <div class="edit-field" style="flex:1;margin:0"><label>Grupo</label><select class="edit-inp" data-bind="n4.${i}.grupo">${gopts}</select></div>
-          <div class="edit-field" style="flex:1;margin:0"><label>Responsável</label><select class="edit-inp" data-bind="n4.${i}.resp"><option ${a.resp==="Você"?"selected":""}>Você</option><option ${a.resp==="RH"?"selected":""}>RH</option></select></div>
-        </div>
+        <div class="te-head"><input class="edit-inp" data-bind="tarefas.${it.chave}.texto" value="${at(t.texto)}" placeholder="O que a pessoa precisa fazer" /></div>
+        <div class="edit-field"><label>Explicação (o porquê e como fazer)</label>
+          <textarea class="edit-inp" rows="3" data-bind="tarefas.${it.chave}.detalhe" placeholder="Explique em uma ou duas frases">${esc(t.detalhe||"")}</textarea></div>
         <div class="edit-field"><label>Links de apoio (abrem fora da página)</label>${links}</div>
       </div>`;
     }).join("");
     return `
       <div class="card" style="margin-bottom:16px">
         <p class="eyebrow" style="color:var(--c4)">TÍTULOS DESTA SEÇÃO</p>
-        <div class="edit-field"><label>Título do progresso</label><input class="edit-inp" data-bind="labels.n4_progresso" data-render="1" value="${at(getP(CONTENT,'labels.n4_progresso')||'')}"></div>
         <div class="ee-row">
-          <div class="edit-field" style="flex:1;margin:0"><label>Grupo 1</label><input class="edit-inp" data-bind="labels.n4_g_acessos" data-render="1" value="${at(getP(CONTENT,'labels.n4_g_acessos')||'')}"></div>
-          <div class="edit-field" style="flex:1;margin:0"><label>Grupo 2</label><input class="edit-inp" data-bind="labels.n4_g_ferramentas" data-render="1" value="${at(getP(CONTENT,'labels.n4_g_ferramentas')||'')}"></div>
+          <div class="edit-field" style="flex:1;margin:0"><label>Grupo 1</label><input class="edit-inp" data-bind="labels.cfg_g_primeiro" data-render="1" value="${at(getP(CONTENT,'labels.cfg_g_primeiro')||'')}"></div>
+          <div class="edit-field" style="flex:1;margin:0"><label>Grupo 2</label><input class="edit-inp" data-bind="labels.cfg_g_ferramentas" data-render="1" value="${at(getP(CONTENT,'labels.cfg_g_ferramentas')||'')}"></div>
+        </div>
+        <div class="ee-row">
+          <div class="edit-field" style="flex:1;margin:0"><label>Grupo 3</label><input class="edit-inp" data-bind="labels.cfg_g_contrato" data-render="1" value="${at(getP(CONTENT,'labels.cfg_g_contrato')||'')}"></div>
+          <div class="edit-field" style="flex:1;margin:0"><label>Grupo 4</label><input class="edit-inp" data-bind="labels.cfg_g_conteudos" data-render="1" value="${at(getP(CONTENT,'labels.cfg_g_conteudos')||'')}"></div>
         </div>
       </div>
-      <p class="muted" style="max-width:64ch">Edite o texto, o grupo e os links de cada atividade. Adicione ou remova quando quiser.</p>
-      <div class="tasks-edit" style="margin-top:12px">${cards}</div>
-      <button class="btn ee-add" onclick="taskAdd()">${icon("plus")} Adicionar atividade</button>`;
+      <p class="muted" style="max-width:64ch">Aqui você edita o texto, a explicação e os links de cada tarefa.
+      Quais tarefas aparecem, a ordem e pra quem elas valem vêm da aba <b>itens</b> da planilha.</p>
+      <div class="tasks-edit" style="margin-top:12px">${cards}</div>`;
   }
-  const done = list.filter((_,i)=>state.checks["n4-"+i]).length;
-  const pct = total? Math.round(done/total*100) : 0;
-  const groups = N4_GROUPS.map(g=>{
-    const cards = list.map((a,i)=>({a,i})).filter(x=>x.a.grupo===g.id);
+
+  const total = lista.length, done = lista.filter(x=>state.checks[x.chave]).length;
+  const pct = total ? Math.round(done/total*100) : 0;
+  const grupoDe = ch => (CONTENT.tarefas[ch]||{}).grupo || "outras";
+  const grupos = GRUPOS_TAREFA.map(g=>{
+    const cards = lista.filter(x=> grupoDe(x.chave)===g.id);
     if(!cards.length) return "";
-    const gd = cards.filter(x=>state.checks["n4-"+x.i]).length;
+    const gd = cards.filter(x=>state.checks[x.chave]).length;
     return `<section class="task-group">
-      <div class="tg-head"><span class="tg-ic">${icon(g.icon)}</span><h4>${edLabel('n4_g_'+g.id)}</h4><span class="tg-count" data-grp="${g.id}">${gd}/${cards.length}</span></div>
-      <div class="tasks">${cards.map(x=>taskCard(x.a,x.i)).join("")}</div>
+      <div class="tg-head"><span class="tg-ic">${icon(g.icon)}</span><h4>${edLabel(g.label)}</h4><span class="tg-count" data-grp="${g.id}">${gd}/${cards.length}</span></div>
+      <div class="tasks">${cards.map(taskCard).join("")}</div>
     </section>`;
   }).join("");
-  const sem = list.map((a,i)=>({a,i})).filter(x=>!N4_GROUPS.some(g=>g.id===x.a.grupo));
-  const outras = sem.length ? `<section class="task-group"><div class="tg-head"><span class="tg-ic">${icon("config")}</span><h4>Outras</h4></div><div class="tasks">${sem.map(x=>taskCard(x.a,x.i)).join("")}</div></section>` : "";
+  const sobra = lista.filter(x=> !GRUPOS_TAREFA.some(g=>g.id===grupoDe(x.chave)));
+  const outras = sobra.length ? `<section class="task-group"><div class="tg-head"><span class="tg-ic">${icon("config")}</span><h4>Outras</h4><span class="tg-count">${sobra.filter(x=>state.checks[x.chave]).length}/${sobra.length}</span></div><div class="tasks">${sobra.map(taskCard).join("")}</div></section>` : "";
+
   return `
+    <div class="cfg-aviso">Os acessos dependem de outras pessoas e demoram. Peça todos hoje — o resto da trilha você faz enquanto espera.</div>
     <div class="tasks-progress" id="tasksProgress">
       <div class="tp-top"><span>${edLabel('n4_progresso')}</span><b id="tpLabel">${n4Label(done,total)}</b></div>
       <div class="tp-bar"><div class="tp-fill" id="tpFill" style="width:${pct}%"></div></div>
     </div>
-    <div class="task-groups">${groups}${outras}</div>`;
+    <div class="task-groups">${grupos}${outras}</div>`;
 }
 
 /* ===== nó 5 · boas-vindas com o time ===== */
@@ -1642,14 +1747,15 @@ function slideN5(){
 function renderFoot(n){
   const fn=$("#footNote"), fa=$("#footAction");
   if(editMode){ fn.textContent="Modo edição ativo — preencha os campos destacados."; fa.innerHTML=`<button class="btn" id="foClose">Fechar</button>`; $("#foClose").onclick=closeOverlay; return; }
+  const geral = (temApi() && RESUMO.total) ? `  ·  ${RESUMO.feitos} de ${RESUMO.total} na trilha inteira` : "";
   if(n.type==="tasks"){
-    const total=CONTENT.n4.length, done=CONTENT.n4.filter((_,i)=>state.checks["n4-"+i]).length;
-    if(state.done[n.id]){ fn.textContent="✓ Bloco concluído."; fa.innerHTML=`<button class="btn" id="foClose">Voltar</button>`; }
-    else if(done===total){ fn.textContent="Tudo pronto!"; fa.innerHTML=`<button class="btn btn-done" id="foDone">${icon("check")} Concluir bloco</button>`; }
-    else { fn.textContent=`${done} de ${total} concluídas`; fa.innerHTML=`<button class="btn" id="foClose">Volto depois</button>`; }
+    const lista=tarefasDaPessoa(), total=lista.length, done=lista.filter(x=>state.checks[x.chave]).length;
+    if(state.done[n.id]){ fn.textContent="✓ Bloco concluído."+geral; fa.innerHTML=`<button class="btn" id="foClose">Voltar</button>`; }
+    else if(done===total){ fn.textContent="Tudo pronto!"+geral; fa.innerHTML=`<button class="btn btn-done" id="foDone">${icon("check")} Concluir bloco</button>`; }
+    else { fn.textContent=`${done} de ${total} concluídas`+geral; fa.innerHTML=`<button class="btn" id="foClose">Volto depois</button>`; }
   } else {
-    if(state.done[n.id]){ fn.textContent="✓ Você já viu este bloco."; fa.innerHTML=`<button class="btn" id="foClose">Voltar</button>`; }
-    else { fn.textContent="Terminou de ver? Marque como concluído."; fa.innerHTML=`<button class="btn btn-done" id="foDone">${icon("check")} Concluí</button>`; }
+    if(state.done[n.id]){ fn.textContent="✓ Você já viu este bloco."+geral; fa.innerHTML=`<button class="btn" id="foClose">Voltar</button>`; }
+    else { fn.textContent="Terminou de ver? Marque como concluído."+geral; fa.innerHTML=`<button class="btn btn-done" id="foDone">${icon("check")} Concluí</button>`; }
   }
   const cl=$("#foClose"); if(cl) cl.onclick=closeOverlay;
   const dn=$("#foDone"); if(dn) dn.onclick=()=>completeNode(n);
@@ -1677,6 +1783,9 @@ function wireSlide(n){
       el.querySelector(".task-toggle").addEventListener("click", e=>{ e.stopPropagation(); toggleTask(n, el); });
       el.addEventListener("click", ()=>toggleTask(n, el));
     });
+    sheetBody.querySelectorAll(".task-na").forEach(el=>{
+      el.addEventListener("click", e=>{ e.stopPropagation(); dispensarTarefa(el.dataset.na); });
+    });
   }
 }
 function playVideo(el){
@@ -1689,22 +1798,21 @@ function playVideo(el){
 
 /* ---------- tarefas: toggle (confete só ao MARCAR) ---------- */
 function toggleTask(n, el){
-  const key=el.dataset.key, now=!state.checks[key];
-  state.checks[key]=now; saveState();
-  registrar(chaveTarefa(Number(String(key).split("-")[1])), now);
-  el.classList.toggle("on", now);
-  const tg=el.querySelector(".task-toggle"); if(tg) tg.setAttribute("aria-pressed", now?"true":"false");
-  const total=CONTENT.n4.length, done=CONTENT.n4.filter((_,i)=>state.checks["n4-"+i]).length;
-  const pct = total? Math.round(done/total*100):0;
-  const fill=$("#tpFill"); if(fill) fill.style.width=pct+"%";
-  const lbl=$("#tpLabel"); if(lbl) lbl.textContent=n4Label(done,total);
-  N4_GROUPS.forEach(g=>{
-    const cs=CONTENT.n4.map((a,i)=>({a,i})).filter(x=>x.a.grupo===g.id);
-    const gd=cs.filter(x=>state.checks["n4-"+x.i]).length;
-    const c=sheetBody.querySelector(`.tg-count[data-grp="${g.id}"]`); if(c) c.textContent=`${gd}/${cs.length}`;
-  });
-  if(now){ Confetti.fire("small"); toast("Atividade concluída"); }   // só na transição p/ marcado
-  renderFoot(n);
+  const chave=el.dataset.key, agora=!state.checks[chave];
+  state.checks[chave]=agora;
+  if(!agora) delete state.dispensa[chave];   /* desmarcou: volta a ser pendente de verdade */
+  saveState();
+  registrar(chave, agora);
+  if(agora){ Confetti.fire("small"); toast("Atividade concluída"); }
+  reopen();
+}
+
+/* "Não preciso deste acesso": conta como resolvido, mas o RH vê que foi dispensado. */
+function dispensarTarefa(chave){
+  state.checks[chave]=true; state.dispensa[chave]=true; saveState();
+  registrar(chave, true, { dispensado:true });
+  toast("Marcado como \"não preciso\"");
+  reopen();
 }
 
 /* ---------- concluir nó ---------- */
@@ -1853,14 +1961,21 @@ function capa(opts){
 }
 
 /* marca na tela o que a planilha diz que a pessoa já fez */
-function aplicarFeitos(chaves){
-  state.done={}; state.checks={};
-  (chaves||[]).forEach(ch=>{
+function aplicarFeitos(r){
+  state.done={}; state.checks={}; state.dispensa={};
+  (r.feitos||[]).forEach(ch=>{
     if(BLOCO_CHAVE[ch]) state.done[BLOCO_CHAVE[ch]]=true;
-    const m=/^config-(\d+)$/.exec(ch);
-    if(m) state.checks["n4-"+(Number(m[1])-1)]=true;
+    else state.checks[ch]=true;
   });
+  (r.dispensados||[]).forEach(ch=>{ state.dispensa[ch]=true; });
   saveState();
+}
+
+/* A trilha de cada pessoa: só os blocos que a planilha diz que valem pra ela. */
+function montarTrilha(){
+  const tem={}; ITENS.forEach(i=>{ tem[i.chave]=true; });
+  const filtrada = NODES_TODOS.filter(n=> !CHAVE_BLOCO[n.id] || tem[CHAVE_BLOCO[n.id]]);
+  NODES = filtrada.length ? filtrada : NODES_TODOS.slice();
 }
 
 (function init(){
@@ -1924,8 +2039,10 @@ function aplicarFeitos(chaves){
     }
     colaborador = r.colaborador || {};
     RESUMO = r.resumo || RESUMO;
+    ITENS = r.itens || [];
+    montarTrilha();
     if(colaborador.nome){ state.name = colaborador.nome; }
-    aplicarFeitos(r.feitos);
+    aplicarFeitos(r);
     const comecou = (RESUMO.feitos||0) > 0;
     capa({
       titulo: "Que bom ter você aqui, "+firstName()+"!",
